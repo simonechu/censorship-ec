@@ -1,0 +1,81 @@
+---
+title: "Freedom of Speech and the Economy"
+author: "Simone Chu"
+date: "4/18/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+library(ggplot2)
+library(gt)
+library(tidyverse)
+```
+
+```{r getting_data, echo=FALSE, warning=FALSE}
+
+data <- read_csv("qog_std_cs_jan18.csv")
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+
+qog <- data %>%
+  select(cname, ciri_speech, ht_regtype1, unna_gdppc) %>%
+
+    # cname = country name
+    # ciri_speech = freedom of speech,
+    #   0. Government censorship of the media was complete 
+    #   1. There was some government censorship of the media 
+    #   2. There was no government censorship of the media
+    # ht_regtype1 = regime type (simplified):
+    #     1. Monarchy
+    #     2. Military
+    #     3. One party
+    #     4. Multi-party 9. No-party
+    #     99. Other
+    #     100. Democracy
+    # unna_gdppc = GDP per capita, in USD
+
+    filter(!is.na(cname)) %>%
+    filter(!is.na(ciri_speech)) %>%
+    filter(!is.na(ht_regtype1)) %>%
+    filter(!is.na(unna_gdppc))
+
+democracies <- qog %>%
+  filter(ht_regtype1 == 100) %>%
+  mutate(democracy = "Democracies")
+
+not_democracies <- qog %>%
+  filter(ht_regtype1 != 100) %>%
+  mutate(democracy = "Non-Democracies")
+
+rejoined <- democracies %>%
+  full_join(not_democracies) 
+
+```
+
+```{r calculating, message=FALSE, warning=FALSE}
+
+fos <- rejoined %>%
+  group_by(democracy) %>%
+  summarize(avg_fos = mean(ciri_speech))
+
+ggplot(fos, aes(x = democracy, y = avg_fos, fill = democracy)) +
+  geom_col() +
+  xlab("Non-Democracies vs. Democracies") + 
+  ylab("Average Freedom of Speech") + 
+  labs(title = "Average Freedom of Speech, by Regime Type") + 
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  guides(fill=guide_legend(title=NULL))
+
+```
+
+```{r}
+
+
+```
+
